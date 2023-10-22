@@ -1,7 +1,7 @@
 import os
 import torch
 import numpy as np
-import imageio 
+import imageio
 import json
 import torch.nn.functional as F
 import cv2
@@ -52,7 +52,7 @@ def load_blender_data(basedir, half_res=False, testskip=1):
             skip = 1
         else:
             skip = testskip
-            
+
         for frame in meta['frames'][::skip]:
             fname = os.path.join(basedir, frame['file_path'] + '.png')
             imgs.append(imageio.imread(fname))
@@ -62,18 +62,18 @@ def load_blender_data(basedir, half_res=False, testskip=1):
         counts.append(counts[-1] + imgs.shape[0])
         all_imgs.append(imgs)
         all_poses.append(poses)
-    
+
     i_split = [np.arange(counts[i], counts[i+1]) for i in range(3)]
-    
+
     imgs = np.concatenate(all_imgs, 0)
     poses = np.concatenate(all_poses, 0)
-    
+
     H, W = imgs[0].shape[:2]
     camera_angle_x = float(meta['camera_angle_x'])
     focal = .5 * W / np.tan(.5 * camera_angle_x)
-    
+
     render_poses = torch.stack([pose_spherical(angle, -30.0, 4.0) for angle in np.linspace(-180,180,40+1)[:-1]], 0)
-    
+
     if half_res:
         H = H//2
         W = W//2
@@ -81,7 +81,7 @@ def load_blender_data(basedir, half_res=False, testskip=1):
 
         imgs_half_res = np.zeros((imgs.shape[0], H, W, 4))
         for i, img in enumerate(imgs):
-            # According to the api defined in the link below, the dimension 
+            # According to the api defined in the link below, the dimension
             # should be represented as (W, H).
             # https://www.tutorialkart.com/opencv/python/opencv-python-resize-image/
             imgs_half_res[i] = cv2.resize(img, (W, H), interpolation=cv2.INTER_AREA)
@@ -89,7 +89,7 @@ def load_blender_data(basedir, half_res=False, testskip=1):
         imgs = imgs_half_res
         # imgs = tf.image.resize_area(imgs, [400, 400]).numpy()
 
-        
+
     return imgs, poses, render_poses, [H, W, focal], i_split
 
 
